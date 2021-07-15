@@ -1,72 +1,81 @@
+/* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 
-import { actionCreators as authActions } from 'contexts/UserContext/reducer';
-import { useDispatch as useUserDispatch } from 'contexts/UserContext';
-import { logout, removeCurrentUserToken } from 'services/AuthService';
 import FormInput from 'components/FormInput';
+import { useRequest, useLazyRequest } from 'hooks/useRequest';
+import { getCharacter, getCharacters } from 'services/TestService';
 
 import logo from './assets/logo.svg';
 import styles from './styles.module.scss';
-import { withContextProvider, useSelector, useDispatch } from './context';
-import { actionCreators } from './context/reducer';
 
-interface TechForm {
-  tech: string;
+interface Form {
+  characterId: string;
 }
 
 function Home() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const [searchedCharacter, setSearchedCharacter] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<boolean>(false);
 
-  // Example of how to use these custom hooks
-  const tech = useSelector((state) => state.tech);
-  const dispatch = useDispatch();
-  const userDispatch = useUserDispatch();
-  const { register, handleSubmit } = useForm<TechForm>();
+  const [characters, loadingData] = useRequest(
+    { request: getCharacters, payload: null, withPostFailure: () => setErrorMessage(true) },
+    [searchedCharacter]
+  );
 
-  const handleLogout = async () => {
-    await logout();
-    userDispatch(authActions.resetUser());
-    removeCurrentUserToken();
-  };
-
-  const handleChangeLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
-  };
-
-  const onSubmit = handleSubmit((values) => {
-    if (values.tech) {
-      dispatch(actionCreators.setTech(values.tech));
+  const [characterData, , , submitForm] = useLazyRequest({
+    request: getCharacter,
+    withPostSuccess: (data) => {
+      setSearchedCharacter(data.name);
+    },
+    withPostFailure: (error) => {
+      setSearchedCharacter(
+        error && error.problem === 'NETWORK_ERROR' ? t('Home:connectionError') : t('Home:error')
+      );
     }
   });
+
+  const { register, handleSubmit } = useForm<Form>();
+
+  const onSubmit = handleSubmit(({ characterId }) => {
+    submitForm(characterId);
+  });
+
+  useEffect(() => {
+    if (characterData) {
+      setSearchedCharacter(characterData.name);
+    }
+  }, [characterData]);
 
   return (
     <div className={styles.app}>
       <header className={styles.appHeader}>
         <img src={logo} className={styles.appLogo} alt="logo" />
-        <p className={styles.text}>{t('Home:loggedIn')}</p>
-        <p className={styles.text}>{t('Home:techIs', { tech })}</p>
+        <p className={styles.text}>{searchedCharacter || t('Home:character')}</p>
         <form className="column center m-bottom-10" onSubmit={onSubmit}>
           <FormInput
             className="m-bottom-2"
-            placeholder={t('Home:newTech')}
+            placeholder={t('Home:character')}
             inputRef={register()}
-            name="tech"
+            name="characterId"
             inputType="text"
           />
-          <button className={styles.appLink} type="submit">
-            {t('Home:setNewTech')}
+          <button type="submit" aria-label="button">
+            {t('Home:submit')}
           </button>
         </form>
-        <button type="button" onClick={handleChangeLanguage} className={`m-bottom-4 ${styles.appLink}`}>
-          {t('Home:changeLang')}
-        </button>
-        <button type="button" className={styles.appLink} onClick={handleLogout}>
-          {t('Home:logout')}
-        </button>
+        <p>
+          {characters && !errorMessage
+            ? `${t('Home:total')} ${characters.count}`
+            : loadingData
+            ? t('Home:wait')
+            : t('Home:countError')}
+        </p>
       </header>
     </div>
   );
 }
 
-export default withContextProvider(Home);
+export default Home;

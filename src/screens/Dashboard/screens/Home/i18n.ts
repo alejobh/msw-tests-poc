@@ -1,19 +1,21 @@
 import i18next from 'i18next';
 
 i18next.addResources('es', 'Home', {
-  loggedIn: 'Estás conectado.',
-  changeLang: 'Cambiar idioma',
-  logout: 'Cerrar sesión',
-  setNewTech: 'Cambiar tecnología',
-  newTech: 'Ingresa una nueva tecnología.',
-  techIs: 'La tecnología es: {{tech}}'
+  character: 'Personaje',
+  submit: 'Enviar',
+  error: 'Error',
+  connectionError: 'Error de conexión',
+  total: 'Cantidad de personajes:',
+  loading: 'Lo sentimos, hubo un problema en la conexión.',
+  wait: 'Espere por favor...'
 });
 
 i18next.addResources('en', 'Home', {
-  loggedIn: 'You are logged in.',
-  changeLang: 'Change language',
-  logout: 'Logout',
-  setNewTech: 'Set new tech',
-  newTech: 'Enter new tech.',
-  techIs: 'Tech is: {{tech}}'
+  character: 'Character',
+  submit: 'Submit',
+  error: 'Error',
+  connectionError: 'Connection Error',
+  total: 'Characters total:',
+  countError: 'Sorry, there has been a problem with the connection.',
+  wait: 'Please wait...'
 });

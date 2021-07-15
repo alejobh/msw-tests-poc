@@ -1,80 +1,61 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+/* eslint-disable @typescript-eslint/naming-convention */
+import { render, screen, fireEvent } from '@testing-library/react';
+// import { rest } from 'msw';
+import { setupServer } from 'msw/node';
 
-import * as AuthService from 'services/AuthService';
+import { API_BASE_URL } from 'config/api';
+import { GET_CHARACTER_HANDLERS_V2 } from 'mocks/characters';
+import { MOCK_NETWORK_ERROR, mockNetworkError } from 'mocks/errors';
 
-import Home from '.';
+import Home from './index';
 
-const reactI18next = jest.requireMock('react-i18next');
+const server = setupServer(...GET_CHARACTER_HANDLERS_V2);
 
-describe('Home component', () => {
-  afterAll(() => {
-    jest.clearAllMocks();
+const setup = () => {
+  const utils = render(<Home />);
+  const input = utils.getByLabelText('form-input');
+  const button = utils.getByLabelText('button');
+  return {
+    input,
+    button,
+    ...utils
+  };
+};
+
+beforeEach(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+describe('When screen renders', () => {
+  test('shows characters count', async () => {
+    setup();
+    expect(await screen.findByText('Home:total 82')).toBeInTheDocument();
   });
-
-  test('logouts when clicks logout button', async () => {
-    const logout = jest.fn();
-    const removeCurrentUserToken = jest.fn();
-    jest.spyOn(AuthService, 'logout').mockImplementationOnce(logout);
-    jest.spyOn(AuthService, 'removeCurrentUserToken').mockImplementationOnce(removeCurrentUserToken);
-
-    render(<Home />);
-
-    const logoutButton = screen.getByRole('button', { name: /Home:logout/ });
-    userEvent.click(logoutButton);
-
-    await waitFor(() => expect(logout).toHaveBeenCalled());
-    expect(removeCurrentUserToken).toHaveBeenCalled();
+  test('if no connection, shows error message', async () => {
+    setup();
+    server.use(MOCK_NETWORK_ERROR);
+    expect(await screen.findByText('Home:countError')).toBeInTheDocument();
   });
+});
 
-  test('sets the tech when tech is typed', async () => {
-    render(<Home />);
-
-    userEvent.type(screen.getByPlaceholderText(/Home:newTech/), 'Angular');
-    await waitFor(() => userEvent.click(screen.getByRole('button', { name: /Home:setNewTech/ })));
-    expect(screen.queryByText(/Home:techIs {"tech":"Angular"}/)).toBeInTheDocument();
+describe('When trying to get a character', () => {
+  test('if disconnected, shows error', async () => {
+    server.use(mockNetworkError(`${API_BASE_URL}people/:id`));
+    const { input, button } = setup();
+    fireEvent.change(input, { target: { value: '1' } });
+    fireEvent.click(button);
+    expect(await screen.findByText('Home:connectionError')).toBeInTheDocument();
   });
-
-  test('does not set tech if not typed', async () => {
-    render(<Home />);
-
-    userEvent.type(screen.getByPlaceholderText(/Home:newTech/), '');
-    await waitFor(() => userEvent.click(screen.getByRole('button', { name: /Home:setNewTech/ })));
-    expect(screen.queryByText(/Home:techIs {"tech":"React"}/)).toBeInTheDocument();
+  test('if exists, shows name', async () => {
+    const { input, button } = setup();
+    fireEvent.change(input, { target: { value: '1' } });
+    fireEvent.click(button);
+    expect(await screen.findByText('C-3PO')).toBeInTheDocument();
   });
-
-  test('Calls change language from es to en', async () => {
-    const changeLanguage = jest.fn();
-    const spy = jest.spyOn(reactI18next, 'useTranslation').mockReturnValue({
-      t: (key: string) => key,
-      i18n: {
-        changeLanguage,
-        language: 'es'
-      }
-    });
-
-    const { rerender } = render(<Home />);
-
-    const logoutButton = screen.getByRole('button', { name: /Home:changeLang/ });
-    // Calls once for first lang change to "en"
-    userEvent.click(logoutButton);
-    await waitFor(() => expect(changeLanguage).toHaveBeenCalledWith('en'));
-    spy.mockClear();
-
-    spy.mockReturnValue({
-      t: (key: string) => key,
-      i18n: {
-        changeLanguage,
-        language: 'en'
-      }
-    });
-
-    // Rerender the component again to take the new spy mock
-    rerender(<Home />);
-    // Calls a second time to change lang to return lang to "es"
-    userEvent.click(logoutButton);
-    await waitFor(() => expect(changeLanguage).toHaveBeenCalledWith('es'));
-
-    spy.mockClear();
+  test('if does not exist, shows error', async () => {
+    const { input, button } = setup();
+    fireEvent.change(input, { target: { value: 'sarasa' } });
+    fireEvent.click(button);
+    expect(await screen.findByText('Home:error')).toBeInTheDocument();
   });
 });
