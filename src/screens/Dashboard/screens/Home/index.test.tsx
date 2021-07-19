@@ -38,7 +38,7 @@ beforeAll(() => {
   server.listen();
   render(<Home />);
 });
-/* NOTE: 'It is important to reset all handlers either before or after each test runs. Specially if you are using use() and trying to handle Network exceptions.
+/* NOTE: It is important to reset all handlers either before or after each test runs. Specially if you are using use() and trying to handle Network exceptions.
 If not done, the handlers in use() statements will override the proper handlers for all the following tests, causing them to fail */
 beforeEach(() => server.resetHandlers());
 afterAll(() => server.close());
