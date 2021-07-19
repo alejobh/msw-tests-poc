@@ -14,7 +14,9 @@ i18next.addResources('es', 'Home', {
   edit: 'Editar',
   deleteSuccess: 'El elemento fue eliminado correctamente',
   deleteError: 'Ha habido un error eliminando el elemento',
-  createSuccess: 'El elemento fue creado correctamente. ID: {{id}}',
+  createSuccess: 'El elemento fue creado correctamente. ID: {{id}}. User ID: {{userId}}',
+  createConditionalSuccess:
+    'El elemento fue creado correctamente, pero no posee usuario asociado. ID: {{id}}.',
   createError: 'Ha habido un error creando el elemento',
   editSuccess: 'El elemento fue modificado correctamente',
   editError: 'Ha habido un error modificando el elemento',
@@ -34,7 +36,9 @@ i18next.addResources('en', 'Home', {
   edit: 'Edit',
   deleteSuccess: 'The element has been deleted successfully',
   deleteError: 'There has been an error while deleting the element',
-  createSuccess: 'The element has been created successfully. ID: {{id}}',
+  createSuccess: 'The element has been created successfully. ID: {{id}}. User ID: {{userId}}',
+  createConditionalSuccess:
+    'The element has been created successfully, but does not possess user. ID: {{id}}.',
   createError: 'There has been an error while creating the element',
   editSuccess: 'The element has been edited successfully',
   editError: 'There has been an error while editing the element',

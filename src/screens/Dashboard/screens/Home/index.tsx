@@ -51,8 +51,10 @@ function Home() {
 
   const [, , , createPostRequest] = useLazyRequest({
     request: createPost,
-    withPostSuccess: ({ id }) => {
-      setNotificationMessage(t('Home:createSuccess', { id }));
+    withPostSuccess: ({ id, userId }) => {
+      setNotificationMessage(
+        userId ? t('Home:createSuccess', { id, userId }) : t('Home:createConditionalSuccess', { id })
+      );
     },
     withPostFailure: () => setNotificationMessage(t('Home:createError'))
   });

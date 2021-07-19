@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { render, screen, fireEvent } from '@testing-library/react';
-// import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 
 import { API_BASE_URL, API_SECONDARY_URL } from 'config/api';
@@ -40,8 +38,8 @@ beforeAll(() => {
   server.listen();
   render(<Home />);
 });
-/* NOTE: 'It is important to reset all handlers either before or after each test runs. Specially if you are using use() and trying to handle Network
-exceptions. If not done, the handlers in use() statements will override the proper handlers for all the following tests, causing them to fail */
+/* NOTE: 'It is important to reset all handlers either before or after each test runs. Specially if you are using use() and trying to handle Network exceptions.
+If not done, the handlers in use() statements will override the proper handlers for all the following tests, causing them to fail */
 beforeEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -72,7 +70,7 @@ describe('When trying to get a character', () => {
   });
   test('if does not exist, shows error', async () => {
     const { input, button } = setup();
-    fireEvent.change(input, { target: { value: 'sarasa' } });
+    fireEvent.change(input, { target: { value: 'someValue' } });
     fireEvent.click(button);
     expect(await screen.findByText('Home:error')).toBeInTheDocument();
   });
@@ -129,12 +127,19 @@ describe('When trying to edit a character', () => {
 });
 
 describe('When trying to create a character', () => {
-  test('if success, shows proper message with ID', async () => {
+  test('if user provided, shows proper message with ID and userID', async () => {
     const { input, button, createButton } = setup();
     fireEvent.change(input, { target: { value: '7' } });
     fireEvent.click(button);
     fireEvent.click(createButton);
-    expect(await screen.findByText('Home:createSuccess {"id":101}')).toBeInTheDocument();
+    expect(await screen.findByText('Home:createSuccess {"id":101,"userId":7}')).toBeInTheDocument();
+  });
+  test('if no user provided, shows proper message without userID', async () => {
+    const { input, button, createButton } = setup();
+    fireEvent.change(input, { target: { value: ' ' } });
+    fireEvent.click(button);
+    fireEvent.click(createButton);
+    expect(await screen.findByText('Home:createConditionalSuccess {"id":101}')).toBeInTheDocument();
   });
   test('if failure, shows error message', async () => {
     const { input, button, createButton } = setup();
