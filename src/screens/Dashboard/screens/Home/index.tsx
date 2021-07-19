@@ -1,72 +1,148 @@
+/* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 
-import { actionCreators as authActions } from 'contexts/UserContext/reducer';
-import { useDispatch as useUserDispatch } from 'contexts/UserContext';
-import { logout, removeCurrentUserToken } from 'services/AuthService';
 import FormInput from 'components/FormInput';
+import { useRequest, useLazyRequest } from 'hooks/useRequest';
+import { getCharacter, getCharacters } from 'services/CharacterService';
+import { deletePost, createPost, editPost } from 'services/PostService';
 
 import logo from './assets/logo.svg';
 import styles from './styles.module.scss';
-import { withContextProvider, useSelector, useDispatch } from './context';
-import { actionCreators } from './context/reducer';
 
-interface TechForm {
-  tech: string;
+interface Form {
+  characterId: string;
 }
 
 function Home() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const [searchedCharacter, setSearchedCharacter] = useState<string>('');
+  const [notificationMessage, setNotificationMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<boolean>(false);
+  const { register, handleSubmit, getValues } = useForm<Form>();
 
-  // Example of how to use these custom hooks
-  const tech = useSelector((state) => state.tech);
-  const dispatch = useDispatch();
-  const userDispatch = useUserDispatch();
-  const { register, handleSubmit } = useForm<TechForm>();
+  const [characters, loadingData] = useRequest(
+    { request: getCharacters, payload: null, withPostFailure: () => setErrorMessage(true) },
+    [searchedCharacter]
+  );
 
-  const handleLogout = async () => {
-    await logout();
-    userDispatch(authActions.resetUser());
-    removeCurrentUserToken();
-  };
-
-  const handleChangeLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
-  };
-
-  const onSubmit = handleSubmit((values) => {
-    if (values.tech) {
-      dispatch(actionCreators.setTech(values.tech));
+  const [characterData, , , submitForm] = useLazyRequest({
+    request: getCharacter,
+    withPostSuccess: (data) => {
+      setSearchedCharacter(data.name);
+    },
+    withPostFailure: (error) => {
+      setSearchedCharacter(
+        error && error.problem === 'NETWORK_ERROR' ? t('Home:connectionError') : t('Home:error')
+      );
     }
   });
+
+  const [, , , deletePostRequest] = useLazyRequest({
+    request: deletePost,
+    withPostSuccess: () => setNotificationMessage(t('Home:deleteSuccess')),
+    withPostFailure: (error) =>
+      setNotificationMessage(
+        error && error.problem === 'NETWORK_ERROR' ? t('Home:deleteError') : t('Home:invalidID')
+      )
+  });
+
+  const [, , , createPostRequest] = useLazyRequest({
+    request: createPost,
+    withPostSuccess: ({ id, userId }) => {
+      setNotificationMessage(
+        userId ? t('Home:createSuccess', { id, userId }) : t('Home:createConditionalSuccess', { id })
+      );
+    },
+    withPostFailure: () => setNotificationMessage(t('Home:createError'))
+  });
+
+  const [, , , editPostRequest] = useLazyRequest({
+    request: editPost,
+    withPostSuccess: () => setNotificationMessage(t('Home:editSuccess')),
+    withPostFailure: (error) =>
+      setNotificationMessage(
+        error && error.problem === 'NETWORK_ERROR' ? t('Home:editError') : t('Home:invalidID')
+      )
+  });
+
+  const onSubmit = handleSubmit(({ characterId }) => {
+    submitForm(characterId);
+  });
+
+  const onDelete = () => {
+    const id = getValues('characterId');
+    if (id) {
+      deletePostRequest(id);
+    }
+  };
+
+  const onCreate = () => {
+    const id = getValues('characterId');
+    if (id) {
+      const value = searchedCharacter || 'Default';
+      createPostRequest({ userId: parseInt(id), title: value, body: value });
+    }
+  };
+
+  const onEdit = () => {
+    const id = getValues('characterId');
+    if (id) {
+      const value = searchedCharacter || 'Default';
+      editPostRequest({
+        id: parseInt(id),
+        userId: parseInt(id),
+        title: value,
+        body: value
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (characterData) {
+      setSearchedCharacter(characterData.name);
+    }
+  }, [characterData]);
 
   return (
     <div className={styles.app}>
       <header className={styles.appHeader}>
         <img src={logo} className={styles.appLogo} alt="logo" />
-        <p className={styles.text}>{t('Home:loggedIn')}</p>
-        <p className={styles.text}>{t('Home:techIs', { tech })}</p>
+        <p className={styles.text}>{searchedCharacter || t('Home:character')}</p>
         <form className="column center m-bottom-10" onSubmit={onSubmit}>
           <FormInput
             className="m-bottom-2"
-            placeholder={t('Home:newTech')}
+            placeholder={t('Home:character')}
             inputRef={register()}
-            name="tech"
+            name="characterId"
             inputType="text"
           />
-          <button className={styles.appLink} type="submit">
-            {t('Home:setNewTech')}
+          <button type="submit" aria-label="button" className="m-bottom-5">
+            {t('Home:submit')}
+          </button>
+          <button type="button" aria-label="create" onClick={onCreate} className="m-bottom-5">
+            {t('Home:create')}
+          </button>
+          <button type="button" aria-label="delete" onClick={onDelete} className="m-bottom-5">
+            {t('Home:delete')}
+          </button>
+          <button type="button" aria-label="edit" onClick={onEdit}>
+            {t('Home:edit')}
           </button>
         </form>
-        <button type="button" onClick={handleChangeLanguage} className={`m-bottom-4 ${styles.appLink}`}>
-          {t('Home:changeLang')}
-        </button>
-        <button type="button" className={styles.appLink} onClick={handleLogout}>
-          {t('Home:logout')}
-        </button>
+        <p className="m-bottom-5">
+          {characters && !errorMessage
+            ? `${t('Home:total')} ${characters.count}`
+            : loadingData
+            ? t('Home:wait')
+            : t('Home:countError')}
+        </p>
+        <p>{notificationMessage}</p>
       </header>
     </div>
   );
 }
 
-export default withContextProvider(Home);
+export default Home;

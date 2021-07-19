@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Switch } from 'react-router-dom';
 
 import { useSelector } from 'contexts/UserContext';
+import { apiSetup } from 'config/api';
 
 import Suspense from '../Suspense';
 
@@ -10,6 +12,10 @@ import styles from './styles.module.scss';
 
 function Routes() {
   const user = useSelector((state) => state.user);
+
+  useEffect(() => {
+    apiSetup();
+  }, []);
 
   return (
     <Router>

@@ -66,6 +66,7 @@ function FormInput({
         disabled={disabled}
         readOnly={readOnly}
         ref={inputRef}
+        aria-label="form-input"
       />
       <span
         id={`${name}-error`}
