@@ -5,13 +5,21 @@ export const STATUS_CODES = {
   ok: 200,
   badRequest: 400,
   unauthorized: 401,
-  notFound: 404
+  notFound: 404,
+  syntaxError: 500
 };
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000/';
 
+export const API_SECONDARY_URL = process.env.REACT_APP_API_SECONDARY_URL || 'http://localhost:5000/';
+
 const api = create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
+});
+
+export const apiSecondary = create({
+  baseURL: API_SECONDARY_URL,
   timeout: 15000,
 });
 

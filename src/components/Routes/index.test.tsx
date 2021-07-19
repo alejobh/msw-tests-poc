@@ -24,7 +24,7 @@ describe('when there is a user', () => {
   test('shows Home screen when being on the home path', async () => {
     window.history.pushState({}, '', PATHS.home);
     render(<WrappedRoutes userState={userState} />);
-    await waitFor(() => expect(screen.getByText(/Home:loggedIn/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Home:character/)).toBeInTheDocument());
   });
 });
 

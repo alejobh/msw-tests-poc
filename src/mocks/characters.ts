@@ -4,14 +4,6 @@ import { rest } from 'msw';
 
 import { STATUS_CODES, API_BASE_URL } from 'config/api';
 
-export const METHODS = {
-  get: 'get',
-  post: 'post',
-  delete: 'delete',
-  put: 'put',
-  patch: 'patch'
-};
-
 export const MOCK_CHARACTER = {
   name: 'C-3PO',
   height: '167',
@@ -45,16 +37,9 @@ export const MOCK_CAST = {
   results: [MOCK_CHARACTER]
 };
 
-export const GET_CHARACTER_HANDLERS = [
-  rest.get(`${API_BASE_URL}people/1`, (_, res, ctx) =>
-    res(ctx.status(STATUS_CODES.ok), ctx.json(MOCK_CHARACTER))
-  ),
-  rest.get(`${API_BASE_URL}people/2`, (_, res, ctx) => res(ctx.status(STATUS_CODES.notFound)))
-];
-
 const validId = (id: number) => id && !isNaN(id) && id < 50;
 
-export const GET_CHARACTER_HANDLERS_V2 = [
+export const GET_CHARACTER_HANDLERS = [
   rest.get(`${API_BASE_URL}people`, (_, res, ctx) => res(ctx.status(STATUS_CODES.ok), ctx.json(MOCK_CAST))),
   rest.get(`${API_BASE_URL}people/:id`, (req, res, ctx) => {
     const { id } = req.params;
@@ -64,32 +49,3 @@ export const GET_CHARACTER_HANDLERS_V2 = [
     return isNaN(id) ? res(ctx.status(STATUS_CODES.notFound)) : res(ctx.status(STATUS_CODES.badRequest));
   })
 ];
-
-export const CHARACTER_HANDLER = {
-  path: `${API_BASE_URL}people/:id`,
-  method: METHODS.get,
-  success: {
-    code: STATUS_CODES.ok,
-    body: MOCK_CHARACTER,
-    conditions: [
-      {
-        param: 'id',
-        condition: validId
-      }
-    ]
-  },
-  failure: [
-    {
-      code: STATUS_CODES.notFound,
-      conditions: [
-        {
-          param: 'id',
-          condition: isNaN
-        }
-      ]
-    },
-    {
-      code: STATUS_CODES.badRequest
-    }
-  ]
-};
