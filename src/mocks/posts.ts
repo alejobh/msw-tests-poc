@@ -30,4 +30,4 @@ export const POST_HANDLERS = [
 ];
 
 /* IMPORTANT NOTE: You will probably notice that there are two handlers for the delete method. The reason is that, if you try to delete the id ' ', it will instead try to delete 'posts/'.
-This is a different behaviour that the one present in the PUT case, in that in the latter case, it will try to update a NaN element, causing the handler to throw a 500 error */
+This is a different behaviour than the one present in the PUT case, in that in the latter case, it will try to update a NaN element, causing the handler to throw a 500 error */
